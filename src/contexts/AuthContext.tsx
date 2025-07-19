@@ -1,5 +1,21 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
+import axios from 'axios';
 
+// === Axios instance locale ===
+const axiosInstance = axios.create({
+  baseURL: 'http://localhost:9000/api/',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// === Interfaces ===
 interface User {
   id: string;
   email: string;
@@ -15,86 +31,88 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
+// === Création du contexte ===
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
+// === Composant AuthProvider ===
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // === Chargement initial depuis localStorage ===
   useEffect(() => {
-    // Vérifier si l'utilisateur est connecté au chargement
     const storedToken = localStorage.getItem('k2n_token');
     const storedUser = localStorage.getItem('k2n_user');
-    
+
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
     }
-    
+
     setIsLoading(false);
   }, []);
 
+  // === Fonction login avec axios ===
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    
+    console.log('🔐 Tentative de connexion pour:', email);
+
     try {
-      // Simulation d'appel API - remplacer par votre backend Flask
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      // Vérifier si le serveur est joignable
+      console.log('🧪 Test de connexion au serveur...');
+      console.log('✅ Serveur accessible, tentative de login...');
+
+      // Requête de connexion
+      const response = await axiosInstance.post('/auth/login/', {
+        email,
+        password,
+        rememberMe: true,
       });
 
-      if (!response.ok) {
-        throw new Error('Identifiants invalides');
-      }
+      console.log('📡 Réponse reçue:', response.status, response.statusText);
 
-      const data = await response.json();
-      
-      // Stocker les données d'authentification
-      localStorage.setItem('k2n_token', data.token);
-      localStorage.setItem('k2n_user', JSON.stringify(data.user));
-      
-      setToken(data.token);
-      setUser(data.user);
-    } catch (error) {
-      // Pour le développement, on simule une connexion réussie
-      console.warn('Mode développement - connexion simulée');
-      
-      const mockUser = {
-        id: '1',
-        email: email,
-        name: 'Utilisateur K2N',
-        role: 'admin'
-      };
-      
-      const mockToken = 'mock-jwt-token-for-development';
-      
-      localStorage.setItem('k2n_token', mockToken);
-      localStorage.setItem('k2n_user', JSON.stringify(mockUser));
-      
-      setToken(mockToken);
-      setUser(mockUser);
+      const { token: receivedToken, user: receivedUser } = response.data;
+
+      localStorage.setItem('k2n_token', receivedToken);
+      localStorage.setItem('k2n_user', JSON.stringify(receivedUser));
+
+      setToken(receivedToken);
+      setUser(receivedUser);
+
+      console.log('✅ Connexion réussie pour:', email);
+    } catch (error: any) {
+      console.error('❌ Erreur lors de la connexion:', error);
+
+      if (axios.isAxiosError(error)) {
+        const message =
+          error.response?.data?.detail?.message ||
+          error.response?.data?.message ||
+          'Erreur de connexion';
+        throw new Error(message);
+      } else {
+        throw new Error(error.message || 'Erreur de connexion');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // === Fonction logout ===
   const logout = () => {
     localStorage.removeItem('k2n_token');
     localStorage.removeItem('k2n_user');
     setToken(null);
     setUser(null);
+    console.log('👋 Déconnexion effectuée');
   };
 
-  const value = {
+  // === Valeur du contexte ===
+  const value: AuthContextType = {
     user,
     token,
     login,
@@ -109,9 +127,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 };
 
-export const useAuth = () => {
+// === Hook personnalisé useAuth ===
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

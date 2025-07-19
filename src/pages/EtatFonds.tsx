@@ -37,7 +37,7 @@ const EtatFonds = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-green-900 flex items-center gap-2">
               <BarChart3 className="w-8 h-8" />
               État des fonds
             </h1>
@@ -46,7 +46,7 @@ const EtatFonds = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2 bg-green-700 hover:bg-green-900">
               <Calendar className="w-4 h-4" />
               Période
             </Button>

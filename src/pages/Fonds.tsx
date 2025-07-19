@@ -95,7 +95,7 @@ const Fonds = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-green-900 flex items-center gap-2">
               <Wallet className="w-8 h-8" />
               Fonds
             </h1>
@@ -103,7 +103,7 @@ const Fonds = () => {
               Gestion des fonds et comptes
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2 bg-green-700 hover:bg-green-900">
             <Plus className="w-4 h-4" />
             Nouveau fonds
           </Button>
@@ -174,11 +174,11 @@ const Fonds = () => {
                   />
                 </div>
               </div>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2 bg-green-700 hover:bg-green-900">
                 <Filter className="w-4 h-4" />
                 Filtrer
               </Button>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2 bg-green-700 hover:bg-green-900">
                 <Calendar className="w-4 h-4" />
                 Période
               </Button>

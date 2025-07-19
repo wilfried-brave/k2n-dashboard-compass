@@ -78,7 +78,7 @@ const Sorties = () => {
               Gestion des sorties et mouvements
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2 bg-green-700 hover:bg-green-900 text-white">
             <Plus className="w-4 h-4" />
             Nouvelle sortie
           </Button>

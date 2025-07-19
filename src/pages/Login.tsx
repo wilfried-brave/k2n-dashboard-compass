@@ -1,40 +1,31 @@
-import React, { useState } from 'react';
+import React, { FormEvent, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, Building2, Shield } from 'lucide-react';
+import { Eye, EyeOff, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isLoading } = useAuth();
-  const navigate = useNavigate();
+  const { login, isLoading } = useAuth(); // ✅ On utilise le contexte ici
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !password) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
     try {
-      await login(email, password);
+      await login(email, password); // ✅ Appelle login du contexte
       toast({
         title: "Connexion réussie",
         description: "Bienvenue dans K2NService",
       });
-      navigate('/dashboard');
+       navigate('/dashboard');
     } catch (error) {
       toast({
         title: "Erreur de connexion",
@@ -50,11 +41,11 @@ const Login = () => {
         {/* Logo et titre */}
         <div className="text-center mb-8">
           <div className="flex justify-center items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-primary-foreground" />
+            <div className="w-[4rem] h-[4rem] bg-gradient-primary rounded-xl flex items-center justify-center">
+              <img src="../public/fish.jpg" alt="logo" className="w-[4rem] h-[4rem]" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">K2NService</h1>
+              <h1 className="text-2xl font-bold text-[#095228]">K2NService</h1>
               <p className="text-sm text-muted-foreground">Plateforme de gestion</p>
             </div>
           </div>
@@ -68,7 +59,7 @@ const Login = () => {
               Accédez à votre espace de gestion
             </p>
           </CardHeader>
-          
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -114,22 +105,22 @@ const Login = () => {
 
               <Button
                 type="submit"
-                className="w-full h-11"
+                className="w-full h-11 bg-green-700 hover:bg-green-900"
                 disabled={isLoading}
               >
                 {isLoading ? 'Connexion...' : 'Se connecter'}
               </Button>
             </form>
 
-            {/* Informations de sécurité */}
-            <div className="mt-6 p-3 bg-primary-light rounded-lg">
+            {/* Infos sécurité */}
+            <div className="mt-6 p-3 bg-green-300 rounded-lg">
               <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-primary" />
-                <span className="text-sm text-primary font-medium">
+                <Shield className="w-4 h-4 text-[#095228]" />
+                <span className="text-sm text-green-800 font-medium">
                   Connexion sécurisée
                 </span>
               </div>
-              <p className="text-xs text-primary mt-1">
+              <p className="text-xs text-green-800 mt-1">
                 Vos données sont protégées par un chiffrement SSL
               </p>
             </div>
@@ -138,7 +129,7 @@ const Login = () => {
 
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-muted-foreground">
-          <p>© 2024 K2NService. Tous droits réservés.</p>
+          <p>© 2025 K2NService. Tous droits réservés.</p>
         </div>
       </div>
     </div>

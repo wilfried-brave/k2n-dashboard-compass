@@ -90,7 +90,7 @@ const Rapports = () => {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-green-900 flex items-center gap-2">
               <FileText className="w-8 h-8" />
               Rapports
             </h1>
@@ -99,11 +99,11 @@ const Rapports = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2 bg-green-700 hover:bg-green-900">
               <Filter className="w-4 h-4" />
               Filtrer
             </Button>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2 bg-green-700 hover:bg-green-900">
               <Calendar className="w-4 h-4" />
               Période
             </Button>
@@ -229,7 +229,7 @@ const Rapports = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="gap-2"
+                      className="gap-2 bg-green-700 hover:bg-green-900"
                       disabled={rapport.status !== 'Terminé'}
                     >
                       <Download className="w-4 h-4" />

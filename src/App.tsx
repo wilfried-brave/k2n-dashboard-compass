@@ -42,7 +42,13 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter
+          // Ajout des flags futurs pour React Router v7
+          future={{
+            v7_startTransition: true,       // Activer React.startTransition
+            v7_relativeSplatPath: true,     // Activer la résolution des chemins relatifs pour les Splat
+          }}
+        >
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

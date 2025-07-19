@@ -98,12 +98,12 @@ export function AppSidebar() {
         {/* Header avec logo */}
         <div className="p-4 border-b">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <Building2 className="w-4 h-4 text-primary-foreground" />
+            <div className="w-[3rem] h-[3rem] bg-gradient-primary rounded-lg flex items-center justify-center">
+              <img src="../public/fish.jpg" alt="logo" className="w-[3rem] h-[3rem] " />
             </div>
             {!isCollapsed && (
               <div>
-                <h2 className="font-semibold text-sidebar-foreground">K2NService</h2>
+                <h2 className="font-semibold text-[#095228]">K2NService</h2>
                 <p className="text-xs text-sidebar-foreground/70">Gestion avancée</p>
               </div>
             )}
@@ -126,7 +126,7 @@ export function AppSidebar() {
                       ${isCollapsed ? 'justify-center' : 'justify-start'}
                       hover:bg-sidebar-accent
                       ${isActive(item.url) 
-                        ? 'bg-sidebar-accent text-sidebar-primary font-medium' 
+                        ? 'bg-[#095228] text-sidebar-primary font-medium' 
                         : 'text-sidebar-foreground'
                       }
                     `}
@@ -156,9 +156,9 @@ export function AppSidebar() {
         {/* Version info */}
         {!isCollapsed && (
           <div className="mt-auto p-4 border-t">
-            <div className="text-xs text-sidebar-foreground/60">
+            <div className="text-xs text-[#095228] ">
               <p>Version 1.0.0</p>
-              <p>© 2024 K2NService</p>
+              <p>© 2025 K2NService</p>
             </div>
           </div>
         )}
