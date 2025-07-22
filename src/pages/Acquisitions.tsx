@@ -4,14 +4,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Plus, ShoppingCart, Search, Filter, Calendar, X } from 'lucide-react';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Plus, ShoppingCart, Search, Filter, Calendar, X, Table } from 'lucide-react';
+import { TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 
 // Types pour les données d'acquisition
 type TrancheData = {
@@ -59,43 +67,7 @@ const Acquisitions = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Données d'acquisitions avec état
-  const [acquisitions, setAcquisitions] = useState<Acquisition[]>([
-    {
-      id: 'ACQ001',
-      responsable_acquisition: 'Jean Dupont',
-      nature_acquisition: 'Ordinateurs portables',
-      quantite_acquise: 15,
-      prix_unitaire: 750,
-      frais_acquisition: 11250,
-      frais_connexes: 0,
-      total_frais: 11250,
-      type_acquisition: 'totale',
-      date_acquisition: '2024-01-15',
-      dates_acquisition_tranches: null,
-      details: 'Ordinateurs Dell Latitude 7420',
-      commentaires: 'Pour le département IT',
-      last_modified_at: '2024-01-15T10:00:00Z',
-    },
-    {
-      id: 'ACQ002',
-      responsable_acquisition: 'Marie Martin',
-      nature_acquisition: 'Mobilier bureau',
-      quantite_acquise: 8,
-      prix_unitaire: 320,
-      frais_acquisition: 2560,
-      frais_connexes: 200,
-      total_frais: 2760,
-      type_acquisition: 'tranches',
-      date_acquisition: '2024-01-14',
-      dates_acquisition_tranches: [
-        { date: '2024-01-14', montant: 1380 },
-        { date: '2024-01-28', montant: 1380 }
-      ],
-      details: 'Bureaux ergonomiques ajustables',
-      commentaires: 'Livraison en 2 fois',
-      last_modified_at: '2024-01-14T14:30:00Z',
-    }
-  ]);
+  const [acquisitions, setAcquisitions] = useState<Acquisition[]>([]);
 
   // État du formulaire
   const [formData, setFormData] = useState<FormData>({
@@ -115,16 +87,27 @@ const Acquisitions = () => {
 
   const showTranches = formData.typeAcquisition === "tranches";
 
-  // Calcul automatique des frais
+  // Récupération des données d'acquisition depuis l'API
   useEffect(() => {
-    const calculatedFraisAcquisition = Math.round(formData.quantiteAcquise * formData.prixUnitaire);
-    const total = calculatedFraisAcquisition + formData.fraisConnexes;
-    setFormData((fd) => ({
-      ...fd,
-      fraisAcquisition: calculatedFraisAcquisition,
-      totalFrais: total,
-    }));
-  }, [formData.quantiteAcquise, formData.prixUnitaire, formData.fraisConnexes]);
+    const fetchAcquisitions = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/acquisitions'); // Remplacez par l'URL de votre API
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des acquisitions');
+        }
+        const data: Acquisition[] = await response.json();
+        setAcquisitions(data);
+      } catch (error) {
+        console.error('Erreur:', error);
+        setError('Erreur lors de la récupération des acquisitions');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAcquisitions();
+  }, []);
 
   // Filtrage des acquisitions
   const filteredAcquisitions = acquisitions.filter(acq =>
@@ -147,101 +130,29 @@ const Acquisitions = () => {
 
   // Gestion des changements de formulaire
   function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) {
+  e:
+    | React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    | { target: { name: string; value: string } }
+) {
+  if ("target" in e && "type" in e.target) {
+    // Cas d'un vrai événement React (input, select...)
     const { name, value, type } = e.target;
-    setFormData((prev) => {
-      let parsedValue: string | number;
-      if (type === "number") {
-        if (name === "quantiteAcquise") {
-          parsedValue = value === "" ? 0 : parseFloat(value);
-        } else {
-          parsedValue = value === "" ? 0 : parseInt(value, 10);
-        }
-      } else {
-        parsedValue = value;
-      }
-      return { ...prev, [name]: parsedValue };
-    });
+    const parsedValue = type === "number" ? (value === "" ? 0 : parseFloat(value)) : value;
+    setFormData((prev) => ({ ...prev, [name]: parsedValue }));
+  } else {
+    // Cas d'un objet personnalisé (comme onValueChange des Select shadcn)
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   }
+}
 
-  // Gestion des tranches
-  function ajouterDateTranche() {
-    setFormData((prev) => ({
-      ...prev,
-      datesAcquisitionTranches: [...prev.datesAcquisitionTranches, { date: "", montant: 0 }],
-    }));
-  }
 
-  function handleTrancheChange(index: number, field: 'date' | 'montant', value: string | number) {
-    setFormData((prev) => {
-      const newTranches = [...prev.datesAcquisitionTranches];
-      if (field === 'montant') {
-        newTranches[index] = { ...newTranches[index], [field]: parseInt(value as string, 10) || 0 };
-      } else {
-        newTranches[index] = { ...newTranches[index], [field]: value as string };
-      }
-      return { ...prev, datesAcquisitionTranches: newTranches };
-    });
-  }
-
-  function supprimerTranche(index: number) {
-    if (formData.datesAcquisitionTranches.length > 1) {
-      setFormData((prev) => ({
-        ...prev,
-        datesAcquisitionTranches: prev.datesAcquisitionTranches.filter((_, i) => i !== index),
-      }));
-    }
-  }
-
-  // Validation du formulaire
-  function validate(): boolean {
-    if (!formData.responsableAcquisition.trim()) {
-      setError("Veuillez entrer le nom du responsable de l'acquisition.");
-      return false;
-    }
-    if (!formData.natureAcquisition.trim()) {
-      setError("Veuillez entrer la nature du produit acquis.");
-      return false;
-    }
-    if (formData.quantiteAcquise <= 0) {
-      setError("Veuillez entrer une quantité acquise valide (> 0).");
-      return false;
-    }
-    if (formData.prixUnitaire <= 0) {
-      setError("Veuillez entrer un prix unitaire valide (> 0).");
-      return false;
-    }
-    if (!formData.typeAcquisition) {
-      setError("Veuillez sélectionner le type d'acquisition.");
-      return false;
-    }
-    if (!formData.dateAcquisition) {
-      setError("Veuillez entrer la date d'acquisition.");
-      return false;
-    }
-    if (showTranches) {
-      for (let i = 0; i < formData.datesAcquisitionTranches.length; i++) {
-        const tranche = formData.datesAcquisitionTranches[i];
-        if (!tranche.date) {
-          setError(`Veuillez remplir la date de la tranche ${i + 1}.`);
-          return false;
-        }
-        if (tranche.montant <= 0) {
-          setError(`Veuillez entrer un montant valide (> 0) pour la tranche ${i + 1}.`);
-          return false;
-        }
-      }
-    }
-    setError(null);
-    return true;
-  }
-
+function handleSelectChange(name: string, value: string) {
+  setFormData((prev) => ({ ...prev, [name]: value }));
+}
   // Soumission du formulaire
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!validate()) return;
-
     setIsLoading(true);
     setSuccessMessage(null);
     setError(null);
@@ -265,30 +176,12 @@ const Acquisitions = () => {
         last_modified_at: new Date().toISOString(),
       };
 
+      // Ajout à la liste locale
       setAcquisitions(prev => [newAcquisition, ...prev]);
       setSuccessMessage("Acquisition enregistrée avec succès !");
       
       // Réinitialiser le formulaire
-      setFormData({
-        responsableAcquisition: "",
-        natureAcquisition: "",
-        quantiteAcquise: 0,
-        prixUnitaire: 0,
-        fraisAcquisition: 0,
-        fraisConnexes: 0,
-        totalFrais: 0,
-        typeAcquisition: "",
-        dateAcquisition: "",
-        datesAcquisitionTranches: [{ date: "", montant: 0 }],
-        details: "",
-        commentaires: "",
-      });
-
-      // Fermer le modal après un délai
-      setTimeout(() => {
-        setShowModal(false);
-        setSuccessMessage(null);
-      }, 2000);
+      resetForm();
 
     } catch (err) {
       console.error("Erreur lors de l'enregistrement de l'acquisition:", err);
@@ -303,20 +196,7 @@ const Acquisitions = () => {
     setShowModal(false);
     setError(null);
     setSuccessMessage(null);
-    setFormData({
-      responsableAcquisition: "",
-      natureAcquisition: "",
-      quantiteAcquise: 0,
-      prixUnitaire: 0,
-      fraisAcquisition: 0,
-      fraisConnexes: 0,
-      totalFrais: 0,
-      typeAcquisition: "",
-      dateAcquisition: "",
-      datesAcquisitionTranches: [{ date: "", montant: 0 }],
-      details: "",
-      commentaires: "",
-    });
+    resetForm();
   }
 
   return (
@@ -357,28 +237,6 @@ const Acquisitions = () => {
             <CardContent>
               <div className="text-2xl font-bold">{filteredAcquisitions.length}</div>
               <p className="text-xs text-muted-foreground">Transactions</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">En tranches</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {filteredAcquisitions.filter(acq => acq.type_acquisition === 'tranches').length}
-              </div>
-              <p className="text-xs text-muted-foreground">Acquisitions</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Responsables</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {new Set(filteredAcquisitions.map(acq => acq.responsable_acquisition)).size}
-              </div>
-              <p className="text-xs text-muted-foreground">Uniques</p>
             </CardContent>
           </Card>
         </div>
@@ -432,7 +290,6 @@ const Acquisitions = () => {
                   <TableHead>Prix unitaire</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -443,15 +300,8 @@ const Acquisitions = () => {
                     <TableCell>{acquisition.nature_acquisition}</TableCell>
                     <TableCell>{acquisition.quantite_acquise}</TableCell>
                     <TableCell>{acquisition.prix_unitaire.toLocaleString()} €</TableCell>
-                    <TableCell className="font-medium">
-                      {acquisition.total_frais.toLocaleString()} €
-                    </TableCell>
+                    <TableCell className="font-medium">{acquisition.total_frais.toLocaleString()} €</TableCell>
                     <TableCell>{new Date(acquisition.date_acquisition).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(acquisition.type_acquisition)}>
-                        {acquisition.type_acquisition}
-                      </Badge>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -460,289 +310,149 @@ const Acquisitions = () => {
         </Card>
 
         {/* Modal pour nouvelle acquisition */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-900">Nouvelle Acquisition</h2>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={closeModal}
-                  className="p-2 bg-green-900"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+        <Dialog open={showModal} onOpenChange={setShowModal}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-green-800">Nouvelle Acquisition</DialogTitle>
+              <DialogDescription className="text-green-600">
+                Enregistrez une nouvelle acquisition dans le système
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Messages de succès/erreur */}
+              {successMessage && (
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                  {successMessage}
+                </div>
+              )}
+              {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Responsable de l'Acquisition *
+                </label>
+                <Input
+                  type="text"
+                  name="responsableAcquisition"
+                  value={formData.responsableAcquisition}
+                  onChange={handleChange}
+                  required
+                />
               </div>
 
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                {/* Messages de succès/erreur */}
-                {successMessage && (
-                  <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                    {successMessage}
-                  </div>
-                )}
-                {error && (
-                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                    {error}
-                  </div>
-                )}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nature du Produit Acquis *
+                </label>
+                <Input
+                  type="text"
+                  name="natureAcquisition"
+                  value={formData.natureAcquisition}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Colonne gauche - Informations produit */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-green-700 border-b pb-2">
-                      Informations Produit
-                    </h3>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Responsable de l'Acquisition *
-                      </label>
-                      <Input
-                        type="text"
-                        name="responsableAcquisition"
-                        value={formData.responsableAcquisition}
-                        onChange={handleChange}
-                        required
-                        disabled={isLoading}
-                      />
-                    </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quantité Acquise *
+                </label>
+                <Input
+                  type="number"
+                  name="quantiteAcquise"
+                  value={formData.quantiteAcquise}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nature du Produit Acquis *
-                      </label>
-                      <Input
-                        type="text"
-                        name="natureAcquisition"
-                        value={formData.natureAcquisition}
-                        onChange={handleChange}
-                        required
-                        disabled={isLoading}
-                      />
-                    </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Prix Unitaire (€) *
+                </label>
+                <Input
+                  type="number"
+                  name="prixUnitaire"
+                  value={formData.prixUnitaire}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Quantité Acquise *
-                      </label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        name="quantiteAcquise"
-                        value={formData.quantiteAcquise}
-                        onChange={handleChange}
-                        required
-                        disabled={isLoading}
-                      />
-                    </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Frais Connexes (€)
+                </label>
+                <Input
+                  type="number"
+                  name="fraisConnexes"
+                  value={formData.fraisConnexes}
+                  onChange={handleChange}
+                />
+              </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Prix Unitaire (€) *
-                      </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        name="prixUnitaire"
-                        value={formData.prixUnitaire}
-                        onChange={handleChange}
-                        required
-                        disabled={isLoading}
-                      />
-                    </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type d'Acquisition *
+                </label>
+                <Select
+                  value={formData.typeAcquisition}
+                  onValueChange={(value) => handleChange({ target: { name: 'typeAcquisition', value } })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner le type d'acquisition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="totale">Totale</SelectItem>
+                    <SelectItem value="tranches">En Tranches</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Détails
-                      </label>
-                      <textarea
-                        name="details"
-                        value={formData.details}
-                        onChange={handleChange}
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                        disabled={isLoading}
-                      />
-                    </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date d'Acquisition *
+                </label>
+                <Input
+                  type="date"
+                  name="dateAcquisition"
+                  value={formData.dateAcquisition}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Commentaires
-                      </label>
-                      <textarea
-                        name="commentaires"
-                        value={formData.commentaires}
-                        onChange={handleChange}
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Colonne droite - Détails acquisition */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-green-700 border-b pb-2">
-                      Détails de l'Acquisition
-                    </h3>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Frais d'Acquisition (€)
-                      </label>
-                      <Input
-                        type="number"
-                        value={formData.fraisAcquisition}
-                        readOnly
-                        className="bg-gray-100 cursor-not-allowed"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Frais Connexes (€)
-                      </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        name="fraisConnexes"
-                        value={formData.fraisConnexes}
-                        onChange={handleChange}
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Total des Frais (€)
-                      </label>
-                      <Input
-                        type="number"
-                        value={formData.totalFrais}
-                        readOnly
-                        className="bg-gray-100 cursor-not-allowed font-semibold"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Type d'Acquisition *
-                      </label>
-                      <select
-                        name="typeAcquisition"
-                        value={formData.typeAcquisition}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                        disabled={isLoading}
-                      >
-                        <option value="">Sélectionner...</option>
-                        <option value="totale">Totale</option>
-                        <option value="tranches">En Tranches</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Date d'Acquisition *
-                      </label>
-                      <Input
-                        type="date"
-                        name="dateAcquisition"
-                        value={formData.dateAcquisition}
-                        onChange={handleChange}
-                        required
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    {/* Section tranches */}
-                    {showTranches && (
-                      <div className="border-t pt-4">
-                        <label className="block mb-2 font-medium text-gray-700">
-                          Dates et Montants des Tranches (€) *
-                        </label>
-                        {formData.datesAcquisitionTranches.map((tranche, index) => (
-                          <div key={index} className="flex gap-2 mb-2">
-                            <Input
-                              type="date"
-                              className="flex-1"
-                              value={tranche.date}
-                              onChange={(e) =>
-                                handleTrancheChange(index, "date", e.target.value)
-                              }
-                              required
-                              disabled={isLoading}
-                            />
-                            <Input
-                              type="number"
-                              min="0"
-                              className="w-32"
-                              value={tranche.montant}
-                              onChange={(e) =>
-                                handleTrancheChange(index, "montant", e.target.value)
-                              }
-                              required
-                              disabled={isLoading}
-                            />
-                            {formData.datesAcquisitionTranches.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => supprimerTranche(index)}
-                                className="px-3"
-                                disabled={isLoading}
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={ajouterDateTranche}
-                          className="mt-2"
-                          disabled={isLoading}
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Ajouter Tranche
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Boutons d'action */}
-                <div className="flex justify-end gap-4 pt-6 border-t">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={closeModal}
-                    disabled={isLoading}
-                  >
-                    Annuler
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    {isLoading ? "Enregistrement..." : "Enregistrer l'Acquisition"}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+              <DialogFooter className="gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeModal}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Enregistrer
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
 };
 
 export default Acquisitions;
+function resetForm() {
+  throw new Error('Function not implemented.');
+}
+

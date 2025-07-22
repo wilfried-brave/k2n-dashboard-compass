@@ -1,73 +1,187 @@
-# Welcome to your Lovable project
+Bien sûr ! Voici une version améliorée de ton README.md, en commençant par la partie **clonage du dépôt**, puis toutes les étapes clairement expliquées pour démarrer le frontend et backend.
 
-## Project info
+---
 
-**URL**: https://lovable.dev/projects/07d307cb-d9ef-4cb4-87de-daaf0cc3efc9
+````md
+# 🧩 K2NService Platform
 
-## How can I edit this code?
+Plateforme complète de gestion développée avec :
 
-There are several ways of editing your application.
+- 🖥️ **Frontend** : React + TypeScript + Tailwind CSS + shadcn/ui  
+- ⚙️ **Backend** : FastAPI + SQLite  
+- 🧪 API REST avec Swagger UI pour tester facilement les endpoints  
+- 🌐 Déploiement via Lovable (frontend) et hébergement libre pour le backend  
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/07d307cb-d9ef-4cb4-87de-daaf0cc3efc9) and start prompting.
+## 🚀 Cloner le projet
 
-Changes made via Lovable will be committed automatically to this repo.
+```bash
+# Cloner le dépôt Git
+git clone https://github.com/ton-utilisateur/k2nservice.git
 
-**Use your preferred IDE**
+# Se positionner dans le dossier du projet
+cd k2nservice
+````
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🌐 Aperçu de la stack
 
-Follow these steps:
+### 🖥️ Frontend
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+* [React](https://react.dev/) (via [Vite](https://vitejs.dev/))
+* [TypeScript](https://www.typescriptlang.org/)
+* [Tailwind CSS](https://tailwindcss.com/)
+* [shadcn/ui](https://ui.shadcn.dev/)
+* [Lucide Icons](https://lucide.dev/)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### ⚙️ Backend
 
-# Step 3: Install the necessary dependencies.
-npm i
+* [FastAPI](https://fastapi.tiangolo.com/)
+* [Uvicorn](https://www.uvicorn.org/)
+* [SQLAlchemy](https://www.sqlalchemy.org/) + [SQLite](https://www.sqlite.org/index.html)
+* [dotenv](https://pypi.org/project/python-dotenv/)
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+---
+
+## ▶️ Démarrer le projet en local
+
+### 📦 1. Démarrer le **Frontend React**
+
+```bash
+# Aller dans le dossier frontend
+cd frontend
+
+# Installer les dépendances
+npm install
+
+# Lancer le serveur de développement Vite
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+✅ Frontend disponible sur : [http://localhost:8080](http://localhost:8080)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+### 🔁 2. Démarrer le **Backend FastAPI**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+# Aller dans le dossier backend
+cd backend
 
-## What technologies are used for this project?
+# (Optionnel) Créer un environnement virtuel Python
+python -m venv venv
 
-This project is built with:
+# Activer l'environnement virtuel
+# Windows :
+venv\Scripts\activate
+# macOS / Linux :
+source venv/bin/activate
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Installer les dépendances Python
+pip install -r requirements.txt
 
-## How can I deploy this project?
+# Lancer le serveur FastAPI sur le port 9000
+uvicorn main:app --reload --port 9000
+```
 
-Simply open [Lovable](https://lovable.dev/projects/07d307cb-d9ef-4cb4-87de-daaf0cc3efc9) and click on Share -> Publish.
+✅ API REST disponible sur :
 
-## Can I connect a custom domain to my Lovable project?
+* Swagger UI : [http://localhost:9000/docs](http://localhost:9000/docs)
+* Redoc : [http://localhost:9000/redoc](http://localhost:9000/redoc)
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🛢️ Configuration de la base de données
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+**Base utilisée : SQLite**
+
+### Exemple de fichier `.env` à placer dans `backend/.env` :
+
+```
+DATABASE_URL=sqlite:///./app.db
+```
+
+Le backend chargera automatiquement cette configuration grâce à `dotenv`.
+
+---
+
+## 🚀 Déploiement
+
+### 🌐 Frontend React
+
+Déployé via [Lovable](https://lovable.dev/projects/07d307cb-d9ef-4cb4-87de-daaf0cc3efc9)
+
+🔗 Lien : [https://lovable.dev/projects/07d307cb-d9ef-4cb4-87de-daaf0cc3efc9](https://lovable.dev/projects/07d307cb-d9ef-4cb4-87de-daaf0cc3efc9)
+
+Pour publier :
+
+```
+Menu Share → Publish
+```
+
+### ⚙️ Backend FastAPI
+
+Peut être déployé sur :
+
+* Render (gratuit et facile)
+* Railway (supporte SQLite)
+* VPS personnel
+
+---
+
+## 🌍 Connecter un domaine personnalisé
+
+Depuis Lovable :
+
+```
+Menu Project > Settings > Domains > Connect Domain
+```
+
+📖 [Guide officiel Lovable pour domaine personnalisé](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+---
+
+## ✅ Checklist rapide
+
+* [x] Cloner le repo et se positionner dans le dossier
+* [x] Installer les dépendances frontend (`npm install`)
+* [x] Lancer le frontend (`npm run dev`)
+* [x] Configurer `.env` dans `backend/` avec la bonne base SQLite
+* [x] Installer les dépendances backend (`pip install -r requirements.txt`)
+* [x] Lancer le backend (`uvicorn main:app --reload --port 9000`)
+* [x] Frontend configuré pour consommer l’API backend sur `http://localhost:9000`
+
+---
+
+## 🧪 Exemple de test API
+
+Tester via Swagger ou directement :
+
+```http
+GET http://localhost:9000/api/fonds
+POST http://localhost:9000/api/sorties
+```
+
+---
+
+## 🛠️ Technologies utilisées
+
+| Frontend     | Backend           | Base de données         |
+| ------------ | ----------------- | ----------------------- |
+| React + Vite | FastAPI + Uvicorn | SQLite (via SQLAlchemy) |
+| Tailwind CSS | Pydantic          | `.env` pour la config   |
+| shadcn/ui    | dotenv            |                         |
+
+---
+
+## 📬 Besoin d’aide ?
+
+Contactez l’équipe ou ouvrez un ticket GitHub.
+Bon développement ! 🚀
+
+```
+
+---
+

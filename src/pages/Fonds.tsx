@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,52 +12,36 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Wallet, Search, Filter, Calendar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Plus, Wallet, Search, Filter, Calendar, ArrowUpRight } from 'lucide-react';
+
+interface FondCreate {
+  nomCrediteur: string;
+  sommePercue: number;
+  dateFonds: string; // YYYY-MM-DD
+}
+
+interface FondResponse {
+  id: string;
+  nom_crediteur: string;
+  somme_percue: number;
+  date_fonds: string;
+  created_at: string;
+}
 
 const Fonds = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [fonds, setFonds] = useState<FondResponse[]>([]); // État pour stocker les fonds récupérés
+  const [showNewFondForm, setShowNewFondForm] = useState(false);
+  const [newFond, setNewFond] = useState<FondCreate>({
+    nomCrediteur: '',
+    sommePercue: 0,
+    dateFonds: '',
+  });
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
-  const mockFonds = [
-    {
-      id: 'F001',
-      nom: 'Fonds principal',
-      type: 'Opérationnel',
-      solde: 25000,
-      devise: 'EUR',
-      derniereMaj: '2024-01-15',
-      status: 'Actif',
-    },
-    {
-      id: 'F002',
-      nom: 'Fonds de réserve',
-      type: 'Réserve',
-      solde: 15000,
-      devise: 'EUR',
-      derniereMaj: '2024-01-14',
-      status: 'Actif',
-    },
-    {
-      id: 'F003',
-      nom: 'Fonds investissement',
-      type: 'Investissement',
-      solde: 8500,
-      devise: 'EUR',
-      derniereMaj: '2024-01-13',
-      status: 'Bloqué',
-    },
-    {
-      id: 'F004',
-      nom: 'Fonds urgence',
-      type: 'Urgence',
-      solde: 5000,
-      devise: 'EUR',
-      derniereMaj: '2024-01-12',
-      status: 'Actif',
-    },
-  ];
-
-  const totalFonds = mockFonds.reduce((sum, fond) => sum + fond.solde, 0);
-  const fondsActifs = mockFonds.filter(f => f.status === 'Actif').length;
+  const totalFonds = fonds.reduce((sum, fond) => sum + fond.somme_percue, 0);
+  const fondsActifs = fonds.filter(f => f.somme_percue > 0).length;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -72,20 +56,59 @@ const Fonds = () => {
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Opérationnel':
-        return 'bg-primary text-primary-foreground';
-      case 'Réserve':
-        return 'bg-secondary text-secondary-foreground';
-      case 'Investissement':
-        return 'bg-warning text-warning-foreground';
-      case 'Urgence':
-        return 'bg-destructive text-destructive-foreground';
-      default:
-        return 'bg-secondary text-secondary-foreground';
-    }
+  const handleNewFondChange = (field: keyof FondCreate, value: string | number) => {
+    setNewFond(prev => ({
+      ...prev,
+      [field]: value,
+    }));
   };
+
+  const handleAddNewFond = () => {
+    if (!newFond.nomCrediteur || !newFond.dateFonds || newFond.sommePercue <= 0) {
+      alert('Veuillez remplir tous les champs correctement.');
+      return;
+    }
+    // Create a new fond object for the mock list
+    const newFondEntry = {
+      id: `F${(fonds.length + 1).toString().padStart(3, '0')}`,
+      nom_crediteur: newFond.nomCrediteur,
+      somme_percue: newFond.sommePercue,
+      date_fonds: newFond.dateFonds,
+      created_at: new Date().toISOString(), // Date actuelle
+    };
+    setFonds(prev => [...prev, newFondEntry]);
+    setShowNewFondForm(false);
+    setNewFond({
+      nomCrediteur: '',
+      sommePercue: 0,
+      dateFonds: '',
+    });
+  };
+
+  useEffect(() => {
+    const fetchFonds = async () => {
+      try {
+        const response = await fetch('http://localhost:9000/api/fonds'); // Remplacez par l'URL de votre API
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des fonds');
+        }
+        const data: FondResponse[] = await response.json();
+        setFonds(data);
+      } catch (error) {
+        console.error('Erreur:', error);
+      }
+    };
+
+    fetchFonds();
+  }, []);
+
+  // Filtrage des fonds
+  const filteredFonds = fonds.filter(fond => {
+    const matchesSearch = fond.nom_crediteur.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStartDate = startDate ? new Date(fond.date_fonds) >= new Date(startDate) : true;
+    const matchesEndDate = endDate ? new Date(fond.date_fonds) <= new Date(endDate) : true;
+    return matchesSearch && matchesStartDate && matchesEndDate;
+  });
 
   return (
     <div className="min-h-screen bg-background-secondary">
@@ -103,11 +126,44 @@ const Fonds = () => {
               Gestion des fonds et comptes
             </p>
           </div>
-          <Button className="gap-2 bg-green-700 hover:bg-green-900">
+          <Button className="gap-2 bg-green-700 hover:bg-green-900" onClick={() => setShowNewFondForm(true)}>
             <Plus className="w-4 h-4" />
             Nouveau fonds
           </Button>
         </div>
+
+        {showNewFondForm && (
+          <Card className="mb-6 p-4 bg-white border border-gray-300 rounded-md max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle>Ajouter un nouveau fonds</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4">
+                <Input
+                  placeholder="Nom du créditeur"
+                  value={newFond.nomCrediteur}
+                  onChange={(e) => handleNewFondChange('nomCrediteur', e.target.value)}
+                />
+                <Input
+                  type="number"
+                  placeholder="Somme perçue"
+                  value={newFond.sommePercue}
+                  onChange={(e) => handleNewFondChange('sommePercue', parseFloat(e.target.value))}
+                />
+                <Input
+                  type="date"
+                  placeholder="Date des fonds"
+                  value={newFond.dateFonds}
+                  onChange={(e) => handleNewFondChange('dateFonds', e.target.value)}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowNewFondForm(false)}>Annuler</Button>
+                  <Button onClick={handleAddNewFond}>Ajouter</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -129,7 +185,7 @@ const Fonds = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{fondsActifs}</div>
-              <p className="text-xs text-muted-foreground">Sur {mockFonds.length} total</p>
+              <p className="text-xs text-muted-foreground">Sur {fonds.length} total</p>
             </CardContent>
           </Card>
           <Card>
@@ -138,7 +194,7 @@ const Fonds = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {mockFonds.find(f => f.nom === 'Fonds principal')?.solde.toLocaleString()} €
+                {fonds.find(f => f.nom_crediteur === 'Fonds principal')?.somme_percue.toLocaleString()} €
               </div>
               <p className="text-xs text-muted-foreground">Disponible</p>
             </CardContent>
@@ -149,7 +205,7 @@ const Fonds = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {mockFonds.find(f => f.nom === 'Fonds de réserve')?.solde.toLocaleString()} €
+                {fonds.find(f => f.nom_crediteur === 'Fonds de réserve')?.somme_percue.toLocaleString()} €
               </div>
               <p className="text-xs text-muted-foreground">Sécurisé</p>
             </CardContent>
@@ -173,6 +229,22 @@ const Fonds = () => {
                     className="pl-10"
                   />
                 </div>
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <Input
+                  type="date"
+                  placeholder="Date de début"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <Input
+                  type="date"
+                  placeholder="Date de fin"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
               </div>
               <Button variant="outline" className="gap-2 bg-green-700 hover:bg-green-900">
                 <Filter className="w-4 h-4" />
@@ -200,34 +272,20 @@ const Fonds = () => {
                 <TableRow>
                   <TableHead>ID</TableHead>
                   <TableHead>Nom du fonds</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Solde</TableHead>
-                  <TableHead>Devise</TableHead>
-                  <TableHead>Dernière MAJ</TableHead>
-                  <TableHead>Statut</TableHead>
+                  <TableHead>Somme perçue</TableHead>
+                  <TableHead>Date des fonds</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockFonds.map((fond) => (
+                {filteredFonds.map((fond) => (
                   <TableRow key={fond.id}>
                     <TableCell className="font-medium">{fond.id}</TableCell>
-                    <TableCell>{fond.nom}</TableCell>
-                    <TableCell>
-                      <Badge className={getTypeColor(fond.type)}>
-                        {fond.type}
-                      </Badge>
-                    </TableCell>
+                    <TableCell>{fond.nom_crediteur}</TableCell>
                     <TableCell className="font-medium">
-                      {fond.solde.toLocaleString()} €
+                      {fond.somme_percue.toLocaleString()} €
                     </TableCell>
-                    <TableCell>{fond.devise}</TableCell>
-                    <TableCell>{new Date(fond.derniereMaj).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(fond.status)}>
-                        {fond.status}
-                      </Badge>
-                    </TableCell>
+                    <TableCell>{new Date(fond.date_fonds).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <Button variant="outline" size="sm">
                         Gérer

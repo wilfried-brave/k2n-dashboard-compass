@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,54 +7,29 @@ import { FileText, Download, Calendar, Filter, BarChart3, TrendingUp, FileBarCha
 
 const Rapports = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [rapports, setRapports] = useState([]); // État pour stocker les rapports
+  const [isLoading, setIsLoading] = useState(true); // État pour gérer le chargement
 
-  const mockRapports = [
-    {
-      id: 'R001',
-      nom: 'Rapport mensuel - Janvier 2024',
-      type: 'Mensuel',
-      categorie: 'Financier',
-      dateCreation: '2024-01-31',
-      taille: '2.4 MB',
-      status: 'Terminé',
-    },
-    {
-      id: 'R002',
-      nom: 'Analyse des ventes Q1',
-      type: 'Trimestriel',
-      categorie: 'Ventes',
-      dateCreation: '2024-01-30',
-      taille: '1.8 MB',
-      status: 'En cours',
-    },
-    {
-      id: 'R003',
-      nom: 'État des stocks',
-      type: 'Hebdomadaire',
-      categorie: 'Inventaire',
-      dateCreation: '2024-01-29',
-      taille: '890 KB',
-      status: 'Terminé',
-    },
-    {
-      id: 'R004',
-      nom: 'Rapport d\'acquisitions',
-      type: 'Mensuel',
-      categorie: 'Achats',
-      dateCreation: '2024-01-28',
-      taille: '1.2 MB',
-      status: 'Terminé',
-    },
-  ];
+  useEffect(() => {
+    const fetchRapports = async () => {
+      try {
+        const response = await fetch('http://localhost:9000/api/sales/rapport'); // Remplacez par l'URL de votre API
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des rapports');
+        }
+        const data = await response.json();
+        setRapports(data);
+      } catch (error) {
+        console.error('Erreur:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const rapportTypes = [
-    { nom: 'Rapport financier', description: 'Analyse des revenus et dépenses', icon: BarChart3 },
-    { nom: 'Rapport de ventes', description: 'Suivi des performances commerciales', icon: TrendingUp },
-    { nom: 'Rapport d\'inventaire', description: 'État des stocks et mouvements', icon: FileBarChart },
-    { nom: 'Rapport personnalisé', description: 'Créer un rapport sur mesure', icon: FileText },
-  ];
+    fetchRapports();
+  }, []);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case 'Terminé':
         return 'bg-success text-success-foreground';
@@ -67,7 +42,7 @@ const Rapports = () => {
     }
   };
 
-  const getCategorieColor = (categorie: string) => {
+  const getCategorieColor = (categorie) => {
     switch (categorie) {
       case 'Financier':
         return 'bg-primary text-primary-foreground';
@@ -120,23 +95,7 @@ const Rapports = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {rapportTypes.map((type, index) => (
-                <Card key={index} className="cursor-pointer hover:bg-card-hover transition-colors">
-                  <CardContent className="p-4">
-                    <div className="flex flex-col items-center text-center gap-3">
-                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <type.icon className="w-6 h-6 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{type.nom}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {type.description}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {/* Remplacez par votre logique de création de rapport */}
             </div>
           </CardContent>
         </Card>
@@ -148,7 +107,7 @@ const Rapports = () => {
               <CardTitle className="text-sm font-medium">Total rapports</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockRapports.length}</div>
+              <div className="text-2xl font-bold">{rapports.length}</div>
               <p className="text-xs text-muted-foreground">Ce mois-ci</p>
             </CardContent>
           </Card>
@@ -158,7 +117,7 @@ const Rapports = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {mockRapports.filter(r => r.status === 'Terminé').length}
+                {rapports.filter(r => r.status === 'Terminé').length}
               </div>
               <p className="text-xs text-muted-foreground">Rapports générés</p>
             </CardContent>
@@ -169,7 +128,7 @@ const Rapports = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {mockRapports.filter(r => r.status === 'En cours').length}
+                {rapports.filter(r => r.status === 'En cours').length}
               </div>
               <p className="text-xs text-muted-foreground">En génération</p>
             </CardContent>
@@ -194,51 +153,57 @@ const Rapports = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {mockRapports.map((rapport) => (
-                <div key={rapport.id} className="flex items-center justify-between p-4 bg-background-tertiary rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{rapport.nom}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge className={getCategorieColor(rapport.categorie)}>
-                          {rapport.categorie}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {rapport.type}
-                        </span>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(rapport.dateCreation).toLocaleDateString()}
-                        </span>
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Chargement des données...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {rapports.map((rapport) => (
+                  <div key={rapport.id} className="flex items-center justify-between p-4 bg-background-tertiary rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{rapport.nom}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge className={getCategorieColor(rapport.categorie)}>
+                            {rapport.categorie}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {rapport.type}
+                          </span>
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(rapport.dateCreation).toLocaleDateString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <Badge className={getStatusColor(rapport.status)}>
-                        {rapport.status}
-                      </Badge>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {rapport.taille}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <Badge className={getStatusColor(rapport.status)}>
+                          {rapport.status}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {rapport.taille}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 bg-green-700 hover:bg-green-900"
+                        disabled={rapport.status !== 'Terminé'}
+                      >
+                        <Download className="w-4 h-4" />
+                        Télécharger
+                      </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 bg-green-700 hover:bg-green-900"
-                      disabled={rapport.status !== 'Terminé'}
-                    >
-                      <Download className="w-4 h-4" />
-                      Télécharger
-                    </Button>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>

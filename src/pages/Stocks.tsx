@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,61 +12,31 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Package, Search, Filter, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Plus, Package, Search, Filter, AlertTriangle, CheckCircle, X } from 'lucide-react';
+import axios from 'axios'; // Assurez-vous d'installer axios
 
 const Stocks = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    nom: '',
+    totalAcquis: '',
+    quantiteRestante: ''
+  });
+  const [mockStocks, setMockStocks] = useState([]); // État pour stocker les données récupérées
 
-  const mockStocks = [
-    {
-      id: 'S001',
-      nom: 'Ordinateurs portables',
-      categorie: 'Électronique',
-      quantite: 45,
-      seuilMin: 10,
-      seuilMax: 100,
-      prix: 750,
-      emplacement: 'Entrepôt A',
-      dateUpdate: '2024-01-15',
-      status: 'OK',
-    },
-    {
-      id: 'S002',
-      nom: 'Chaises de bureau',
-      categorie: 'Mobilier',
-      quantite: 8,
-      seuilMin: 15,
-      seuilMax: 50,
-      prix: 120,
-      emplacement: 'Entrepôt B',
-      dateUpdate: '2024-01-14',
-      status: 'Faible',
-    },
-    {
-      id: 'S003',
-      nom: 'Imprimantes laser',
-      categorie: 'Électronique',
-      quantite: 25,
-      seuilMin: 5,
-      seuilMax: 30,
-      prix: 280,
-      emplacement: 'Entrepôt A',
-      dateUpdate: '2024-01-13',
-      status: 'OK',
-    },
-    {
-      id: 'S004',
-      nom: 'Fournitures bureau',
-      categorie: 'Consommables',
-      quantite: 2,
-      seuilMin: 20,
-      seuilMax: 100,
-      prix: 45,
-      emplacement: 'Entrepôt C',
-      dateUpdate: '2024-01-12',
-      status: 'Critique',
-    },
-  ];
+  useEffect(() => {
+    const fetchStocks = async () => {
+      try {
+        const response = await axios.get('http://localhost:9000/api/stocks'); // Remplacez par l'URL de votre API
+        setMockStocks(response.data); // Assurez-vous que la structure des données correspond
+      } catch (error) {
+        console.error('Erreur lors de la récupération des stocks:', error);
+      }
+    };
+
+    fetchStocks();
+  }, []); // Le tableau vide signifie que l'effet ne s'exécute qu'une fois lors du montage
 
   const totalValeur = mockStocks.reduce((sum, stock) => sum + (stock.quantite * stock.prix), 0);
   const stocksFaibles = mockStocks.filter(s => s.status === 'Faible' || s.status === 'Critique').length;
@@ -96,6 +66,26 @@ const Stocks = () => {
     }
   };
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Nouveau produit:', formData);
+    // Ici vous pouvez ajouter la logique pour envoyer les données au backend
+    setShowForm(false);
+    setFormData({ nom: '', totalAcquis: '', quantiteRestante: '' });
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setFormData({ nom: '', totalAcquis: '', quantiteRestante: '' });
+  };
+
   return (
     <div className="min-h-screen bg-background-secondary">
       <DashboardHeader onSearch={setSearchQuery} />
@@ -112,11 +102,107 @@ const Stocks = () => {
               Gestion et suivi des stocks
             </p>
           </div>
-          <Button className="gap-2">
+          <Button 
+            className="gap-2" 
+            onClick={() => setShowForm(true)}
+            style={{ backgroundColor: '#095228' }}
+          >
             <Plus className="w-4 h-4" />
             Ajouter un produit
           </Button>
         </div>
+
+        {/* Formulaire d'ajout */}
+        {showForm && (
+          <Card className="mb-6" style={{ borderColor: '#095228' }}>
+            <CardHeader style={{ backgroundColor: '#095228', color: 'white' }}>
+              <CardTitle className="flex items-center justify-between">
+                <span>Ajouter un nouveau produit</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancel}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </CardTitle>
+              <CardDescription className="text-white/80">
+                Remplissez les informations du produit
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="nom" className="text-sm font-medium text-foreground">
+                      Nom du produit *
+                    </label>
+                    <Input
+                      id="nom"
+                      type="text"
+                      value={formData.nom}
+                      onChange={(e) => handleInputChange('nom', e.target.value)}
+                      placeholder="Ex: Ordinateur portable"
+                      required
+                      className="focus:ring-2 focus:ring-[#095228] focus:border-[#095228]"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="totalAcquis" className="text-sm font-medium text-foreground">
+                      Total acquis *
+                    </label>
+                    <Input
+                      id="totalAcquis"
+                      type="number"
+                      min="0"
+                      value={formData.totalAcquis}
+                      onChange={(e) => handleInputChange('totalAcquis', e.target.value)}
+                      placeholder="Ex: 100"
+                      required
+                      className="focus:ring-2 focus:ring-[#095228] focus:border-[#095228]"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label htmlFor="quantiteRestante" className="text-sm font-medium text-foreground">
+                      Quantité restante *
+                    </label>
+                    <Input
+                      id="quantiteRestante"
+                      type="number"
+                      min="0"
+                      max={formData.totalAcquis || undefined}
+                      value={formData.quantiteRestante}
+                      onChange={(e) => handleInputChange('quantiteRestante', e.target.value)}
+                      placeholder="Ex: 45"
+                      required
+                      className="focus:ring-2 focus:ring-[#095228] focus:border-[#095228]"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancel}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    type="submit"
+                    style={{ backgroundColor: '#095228' }}
+                    className="hover:bg-[#0a5e2e]"
+                  >
+                    Ajouter le produit
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">

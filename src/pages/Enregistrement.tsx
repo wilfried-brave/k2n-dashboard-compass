@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import axios from 'axios'; // Assure-toi que tu l'as installé : `npm install axios`
 
 const Enregistrement = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -31,39 +32,46 @@ const Enregistrement = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.nom || !formData.email || !formData.categorie) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    // Simuler l'enregistrement
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!formData.nom || !formData.email || !formData.categorie) {
+    toast({
+      title: "Erreur",
+      description: "Veuillez remplir tous les champs obligatoires",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  try {
+    await axios.post("http://localhost:9000/api/contact/", {
+      nom: formData.nom,
+      email: formData.email,
+      telephone: formData.telephone,
+      entreprise: formData.adresse, // Ou adapte selon ton backend
+      message: formData.notes,
+    });
+
     toast({
       title: "Succès",
       description: "Enregistrement effectué avec succès",
     });
 
-    // Réinitialiser le formulaire
-    setFormData({
-      nom: '',
-      email: '',
-      telephone: '',
-      adresse: '',
-      ville: '',
-      codePostal: '',
-      pays: '',
-      categorie: '',
-      notes: '',
+    handleReset();
+  } catch (error) {
+    console.error(error);
+    toast({
+      title: "Erreur",
+      description: "Une erreur est survenue lors de l'enregistrement",
+      variant: "destructive",
     });
-  };
+  }
+};
 
-  const handleReset = () => {
+
+  function handleReset() {
     setFormData({
       nom: '',
       email: '',
@@ -75,7 +83,7 @@ const Enregistrement = () => {
       categorie: '',
       notes: '',
     });
-  };
+  }
 
   return (
     <div className="min-h-screen bg-background-secondary">

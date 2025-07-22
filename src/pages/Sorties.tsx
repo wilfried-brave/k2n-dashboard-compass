@@ -1,129 +1,322 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Plus, ArrowDown, Search, Filter, Calendar, X, Table } from 'lucide-react';
 import { DashboardHeader } from '@/components/DashboardHeader';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Plus, ArrowDown, Search, Filter, Calendar } from 'lucide-react';
+import { TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button'; // Assurez-vous d'importer le bon composant Button
+import { Label } from '@/components/ui/label'; // Assurez-vous d'importer le bon composant Label
 
 const Sorties = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [sorties, setSorties] = useState([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    article: '',
+    quantite: '',
+    motif: '',
+    responsable: '',
+    date: ''
+  });
 
-  const mockSorties = [
-    {
-      id: 'SO001',
-      produit: 'Ordinateurs portables',
-      destination: 'Bureau Paris',
-      quantite: 5,
-      valeur: 3750,
-      date: '2024-01-15',
-      type: 'Transfert',
-      status: 'Terminé',
-    },
-    {
-      id: 'SO002',
-      produit: 'Chaises de bureau',
-      destination: 'Agence Lyon',
-      quantite: 12,
-      valeur: 1440,
-      date: '2024-01-14',
-      type: 'Livraison',
-      status: 'En cours',
-    },
-    {
-      id: 'SO003',
-      produit: 'Imprimantes',
-      destination: 'Client ABC',
-      quantite: 3,
-      valeur: 840,
-      date: '2024-01-13',
-      type: 'Vente',
-      status: 'Terminé',
-    },
-  ];
-
-  const totalSorties = mockSorties.reduce((sum, sortie) => sum + sortie.valeur, 0);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Terminé':
-        return 'bg-success text-success-foreground';
-      case 'En cours':
-        return 'bg-warning text-warning-foreground';
-      default:
-        return 'bg-secondary text-secondary-foreground';
+  // Fonction pour récupérer les sorties depuis l'API
+  const fetchSorties = async () => {
+    try {
+      setIsLoading(true);
+      // Remplacez par votre URL d'API
+      const response = await fetch('http://localhost:9000/api/sorties');
+      if (response.ok) {
+        const data = await response.json();
+        setSorties(data);
+      } else {
+        console.error('Erreur lors de la récupération des sorties');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      // Données de démonstration en cas d'erreur
+      setSorties([
+        {
+          id: 'SO001',
+          article: 'Ordinateurs portables',
+          quantite: 5,
+          motif: 'Transfert bureau Paris',
+          responsable: 'Jean Dupont',
+          date_sortie: '2024-01-15',
+        },
+        {
+          id: 'SO002',
+          article: 'Chaises de bureau',
+          quantite: 12,
+          motif: 'Livraison agence Lyon',
+          responsable: 'Marie Martin',
+          date_sortie: '2024-01-14',
+        },
+        {
+          id: 'SO003',
+          article: 'Imprimantes',
+          quantite: 3,
+          motif: 'Vente client ABC',
+          responsable: 'Pierre Leroy',
+          date_sortie: '2024-01-13',
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchSorties();
+  }, []);
+
+  // Gestion du formulaire
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Préparer les données pour l'API
+      const sortieData = {
+        article: formData.article,
+        quantite: parseInt(formData.quantite),
+        motif: formData.motif,
+        responsable: formData.responsable,
+        date: formData.date
+      };
+
+      // Remplacez par votre URL d'API
+      const response = await fetch('http://localhost:9000/api/sorties', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sortieData),
+      });
+
+      if (response.ok) {
+        const newSortie = await response.json();
+        setSorties(prev => [newSortie, ...prev]);
+        setFormData({
+          article: '',
+          quantite: '',
+          motif: '',
+          responsable: '',
+          date: ''
+        });
+        setIsFormOpen(false);
+      } else {
+        console.error('Erreur lors de la création de la sortie');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      article: '',
+      quantite: '',
+      motif: '',
+      responsable: '',
+      date: ''
+    });
+  };
+
+  // Filtrage des sorties
+  const filteredSorties = sorties.filter(sortie =>
+    sortie.article.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    sortie.motif.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    sortie.responsable.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalSorties = filteredSorties.length;
+
   return (
-    <div className="min-h-screen bg-background-secondary">
+    <div className="min-h-screen bg-gray-50">
       <DashboardHeader onSearch={setSearchQuery} />
       
       <main className="p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
               <ArrowDown className="w-8 h-8" />
               Sorties
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-gray-600">
               Gestion des sorties et mouvements
             </p>
           </div>
-          <Button className="gap-2 bg-green-700 hover:bg-green-900 text-white">
-            <Plus className="w-4 h-4" />
-            Nouvelle sortie
-          </Button>
+          
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+             <Button
+  className="gap-2"
+  style={{ backgroundColor: '#095228' }}
+  onMouseOver={(e) =>
+    (e.currentTarget.style.backgroundColor = '#074020')
+  }
+  onMouseOut={(e) =>
+    (e.currentTarget.style.backgroundColor = '#095228')
+  }
+>
+  <Plus className="w-4 h-4" />
+  Nouvelle sortie
+</Button>
+
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Nouvelle sortie</DialogTitle>
+                <DialogDescription>
+                  Enregistrer une nouvelle sortie de stock
+                </DialogDescription>
+              </DialogHeader>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="article">Article</Label>
+                    <Input
+                      id="article"
+                      name="article"
+                      value={formData.article}
+                      onChange={handleInputChange}
+                      placeholder="Nom de l'article"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="quantite">Quantité</Label>
+                    <Input
+                      id="quantite"
+                      name="quantite"
+                      type="number"
+                      min="1"
+                      value={formData.quantite}
+                      onChange={handleInputChange}
+                      placeholder="Nombre d'unités"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="motif">Motif</Label>
+                  <Textarea
+                    id="motif"
+                    name="motif"
+                    value={formData.motif}
+                    onChange={handleInputChange}
+                    placeholder="Raison de la sortie"
+                    rows={3}
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="responsable">Responsable</Label>
+                    <Input
+                      id="responsable"
+                      name="responsable"
+                      value={formData.responsable}
+                      onChange={handleInputChange}
+                      placeholder="Nom du responsable"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Date</Label>
+                    <Input
+                      id="date"
+                      name="date"
+                      type="date"
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      resetForm();
+                      setIsFormOpen(false);
+                    }}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Annuler
+                  </Button>
+                  <Button
+  type="submit"
+  disabled={isLoading}
+  className="bg-[#095228] hover:bg-[#074020] disabled:opacity-60"
+>
+  {isLoading ? 'Enregistrement...' : 'Enregistrer'}
+</Button>
+
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Stats cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Valeur totale</CardTitle>
+              <CardTitle className="text-sm font-medium">Total sorties</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalSorties.toLocaleString()} €</div>
-              <p className="text-xs text-muted-foreground">Ce mois-ci</p>
+              <div className="text-2xl font-bold">{totalSorties}</div>
+              <p className="text-xs text-gray-600">Mouvements</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Nombre sorties</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{mockSorties.length}</div>
-              <p className="text-xs text-muted-foreground">Mouvements</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">En cours</CardTitle>
+              <CardTitle className="text-sm font-medium">Aujourd'hui</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {mockSorties.filter(s => s.status === 'En cours').length}
+                {filteredSorties.filter(s => 
+                  new Date(s.date_sortie).toDateString() === new Date().toDateString()
+                ).length}
               </div>
-              <p className="text-xs text-muted-foreground">Sorties</p>
+              <p className="text-xs text-gray-600">Sorties</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Terminées</CardTitle>
+              <CardTitle className="text-sm font-medium">Ce mois-ci</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {mockSorties.filter(s => s.status === 'Terminé').length}
+                {filteredSorties.filter(s => {
+                  const sortieDate = new Date(s.date_sortie);
+                  const now = new Date();
+                  return sortieDate.getMonth() === now.getMonth() && 
+                         sortieDate.getFullYear() === now.getFullYear();
+                }).length}
               </div>
-              <p className="text-xs text-muted-foreground">Sorties</p>
+              <p className="text-xs text-gray-600">Sorties</p>
             </CardContent>
           </Card>
         </div>
@@ -134,7 +327,7 @@ const Sorties = () => {
             <div className="flex flex-wrap gap-4">
               <div className="flex-1 min-w-[200px]">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
                     placeholder="Rechercher une sortie..."
                     value={searchQuery}
@@ -164,40 +357,45 @@ const Sorties = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Produit</TableHead>
-                  <TableHead>Destination</TableHead>
-                  <TableHead>Quantité</TableHead>
-                  <TableHead>Valeur</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Statut</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockSorties.map((sortie) => (
-                  <TableRow key={sortie.id}>
-                    <TableCell className="font-medium">{sortie.id}</TableCell>
-                    <TableCell>{sortie.produit}</TableCell>
-                    <TableCell>{sortie.destination}</TableCell>
-                    <TableCell>{sortie.quantite}</TableCell>
-                    <TableCell className="font-medium">
-                      {sortie.valeur.toLocaleString()} €
-                    </TableCell>
-                    <TableCell>{new Date(sortie.date).toLocaleDateString()}</TableCell>
-                    <TableCell>{sortie.type}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(sortie.status)}>
-                        {sortie.status}
-                      </Badge>
-                    </TableCell>
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Chargement des données...</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Article</TableHead>
+                    <TableHead>Quantité</TableHead>
+                    <TableHead>Motif</TableHead>
+                    <TableHead>Responsable</TableHead>
+                    <TableHead>Date</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredSorties.map((sortie) => (
+                    <TableRow key={sortie.id}>
+                      <TableCell className="font-medium">{sortie.id}</TableCell>
+                      <TableCell>{sortie.article}</TableCell>
+                      <TableCell>{sortie.quantite}</TableCell>
+                      <TableCell className="max-w-xs truncate">{sortie.motif}</TableCell>
+                      <TableCell>{sortie.responsable}</TableCell>
+                      <TableCell>
+                        {new Date(sortie.date_sortie).toLocaleDateString('fr-FR')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredSorties.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                        Aucune sortie trouvée
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </main>

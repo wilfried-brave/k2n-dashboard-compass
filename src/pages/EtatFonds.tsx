@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,26 +8,37 @@ import { BarChart3, TrendingUp, TrendingDown, Activity, Calendar, Download } fro
 
 const EtatFonds = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [analytics, setAnalytics] = useState(null); // État pour stocker les données récupérées
+  const [isLoading, setIsLoading] = useState(true); // État pour gérer le chargement
 
-  const mockAnalytics = {
-    totalFonds: 53500,
-    variation: 5.2,
-    objectif: 60000,
-    repartition: [
-      { type: 'Opérationnel', montant: 25000, pourcentage: 46.7, couleur: 'bg-primary' },
-      { type: 'Réserve', montant: 15000, pourcentage: 28.0, couleur: 'bg-secondary' },
-      { type: 'Investissement', montant: 8500, pourcentage: 15.9, couleur: 'bg-warning' },
-      { type: 'Urgence', montant: 5000, pourcentage: 9.3, couleur: 'bg-destructive' },
-    ],
-    mouvements: [
-      { date: '2024-01-15', type: 'Entrée', montant: 2500, description: 'Vente service' },
-      { date: '2024-01-14', type: 'Sortie', montant: -450, description: 'Achat équipement' },
-      { date: '2024-01-13', type: 'Entrée', montant: 1200, description: 'Facture client' },
-      { date: '2024-01-12', type: 'Sortie', montant: -800, description: 'Frais généraux' },
-    ],
-  };
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const response = await fetch('http://localhost:9000/api/etat_fonds'); // Remplacez par l'URL de votre API
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des données');
+        }
+        const data = await response.json();
+        setAnalytics(data);
+      } catch (error) {
+        console.error('Erreur:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const progressObjectif = (mockAnalytics.totalFonds / mockAnalytics.objectif) * 100;
+    fetchAnalytics();
+  }, []);
+
+  if (isLoading) {
+    return <div>Chargement des données...</div>; // Affiche un message de chargement
+  }
+
+  if (!analytics) {
+    return <div>Aucune donnée disponible.</div>; // Affiche un message si aucune donnée n'est disponible
+  }
+
+  const progressObjectif = (analytics.totalFonds / analytics.objectif) * 100;
 
   return (
     <div className="min-h-screen bg-background-secondary">
@@ -64,15 +75,15 @@ const EtatFonds = () => {
               <CardTitle className="text-sm font-medium">Total des fonds</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{mockAnalytics.totalFonds.toLocaleString()} €</div>
+              <div className="text-3xl font-bold">{analytics.totalFonds.toLocaleString()} €</div>
               <div className="flex items-center gap-1 text-sm">
-                {mockAnalytics.variation > 0 ? (
+                {analytics.variation > 0 ? (
                   <TrendingUp className="w-4 h-4 text-success" />
                 ) : (
                   <TrendingDown className="w-4 h-4 text-destructive" />
                 )}
-                <span className={mockAnalytics.variation > 0 ? 'text-success' : 'text-destructive'}>
-                  {mockAnalytics.variation > 0 ? '+' : ''}{mockAnalytics.variation}%
+                <span className={analytics.variation > 0 ? 'text-success' : 'text-destructive'}>
+                  {analytics.variation > 0 ? '+' : ''}{analytics.variation}%
                 </span>
                 <span className="text-muted-foreground">ce mois</span>
               </div>
@@ -84,7 +95,7 @@ const EtatFonds = () => {
               <CardTitle className="text-sm font-medium">Objectif annuel</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{mockAnalytics.objectif.toLocaleString()} €</div>
+              <div className="text-3xl font-bold">{analytics.objectif.toLocaleString()} €</div>
               <div className="mt-2">
                 <Progress value={progressObjectif} className="h-2" />
                 <p className="text-xs text-muted-foreground mt-1">
@@ -101,10 +112,10 @@ const EtatFonds = () => {
             <CardContent>
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="w-4 h-4 text-primary" />
-                <span className="text-sm">4 mouvements</span>
+                <span className="text-sm">{analytics.mouvements.length} mouvements</span>
               </div>
               <div className="text-2xl font-bold">
-                {mockAnalytics.mouvements.length}
+                {analytics.mouvements.length}
               </div>
               <p className="text-xs text-muted-foreground">Dernières 24h</p>
             </CardContent>
@@ -122,7 +133,7 @@ const EtatFonds = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                {mockAnalytics.repartition.map((item, index) => (
+                {analytics.repartition.map((item, index) => (
                   <div key={index} className="flex items-center justify-between p-4 bg-background-tertiary rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className={`w-4 h-4 rounded-full ${item.couleur}`} />
@@ -161,7 +172,7 @@ const EtatFonds = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockAnalytics.mouvements.map((mouvement, index) => (
+              {analytics.mouvements.map((mouvement, index) => (
                 <div key={index} className="flex items-center justify-between p-4 bg-background-tertiary rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-full ${
